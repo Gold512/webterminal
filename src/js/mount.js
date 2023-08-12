@@ -1,3 +1,5 @@
+import { showDirectoryPicker } from 'https://cdn.jsdelivr.net/npm/file-system-access/lib/es2018.js'
+
 import { get, set } from 'https://unpkg.com/idb-keyval@5.0.2/dist/esm/index.js';
 import { log, setRoot } from './sys.js';
 
@@ -37,7 +39,7 @@ export async function getHandle(type) {
             return;
         }
 
-        const folderHandle = await window.showDirectoryPicker();
+        const folderHandle = await showDirectoryPicker();
 
         let permission = await verifyPermission(folderHandle, true);
         if(!permission) {

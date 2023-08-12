@@ -1,5 +1,5 @@
 import { getHandle } from "./mount.js";
-import { log, error, clearLog, resolveFileReference, setCurrentFolder, hasMounted, appendToPath, getCurrentFolder, setCurrentPath } from "./sys.js";
+import { log, error, clearLog, resolveFileReference, setCurrentFolder, hasMounted, appendToPath, getCurrentFolder, setCurrentPath, currentInput, executeScript } from "./sys.js";
 import { parseCommand } from "./parser.js";
 import { fileAutoComplete } from "./autocomplete.js";
 
@@ -12,6 +12,13 @@ let lastCommand = '';
 input.addEventListener('keydown', async ev => {
     
     if(ev.key === 'Enter') {
+        if(currentInput) {
+            currentInput(input.value);
+            input.value = '';
+
+            return;
+        }
+
         lastCommand = input.value;
         runCommand(input.value);
         input.value = '';
@@ -193,5 +200,15 @@ registerCommand('sandbox', './cmd/sandbox/index.js')
 registerCommand('_src', (name) => {
     log(CMD[name].toString());
 })
+
+registerCommand('js', async path => {
+    if(!hasMounted()) return error('No directory mounted');
+
+    let script = await resolveFileReference(path);
+    if(!script) return error('no script found');
+
+    executeScript(await script.getFile())
+})
+registerAutoComplete('js', [null, fileAutoComplete]);
 
 log(`'mount' to mount a folder\n'list' to show list of commands`)

@@ -5,6 +5,8 @@ window.root = null;
 let selected = null;
 let currentPath = '';
 
+export let currentInput = null;
+
 export function log(s) {
     output.textContent += s + '\n';
     scrollContainer.scrollTop = scrollContainer.scrollHeight - scrollContainer.offsetHeight;
@@ -13,6 +15,18 @@ export function log(s) {
 export function error(s) {
     output.textContent += 'Error: ' + s + '\n';
     scrollContainer.scrollTop = scrollContainer.scrollHeight - scrollContainer.offsetHeight;
+}
+
+export async function input(prompt = 'input: ') {
+    currentPathContainer.innerText = prompt;
+    return new Promise(resolve => {
+        currentInput = (v) => {
+            resolve(v);
+            log('\n' + prompt + v);
+            currentPathContainer.innerText = currentPath + '>';
+            currentInput = null;
+        }
+    });
 }
 
 export function setRoot(s) {
@@ -27,10 +41,12 @@ export function getCurrentPath() {
 }
 
 export function appendToPath(s) {
-    currentPathContainer.innerText = currentPath + '/' + s + '>';
+    currentPath = currentPath + '/' + s;
+    currentPathContainer.innerText = currentPath + '>';
 }
 
 export function setCurrentPath(s) {
+    currentPath = s;
     currentPathContainer.innerText = s + '>';
 }
 
@@ -100,3 +116,21 @@ function doimport (str) {
 export function executeModule(file) {
     
 }
+
+/**
+ * 
+ * @param {File} file 
+ */
+export async function executeScript(file) {
+    const text = await file.text();
+    let fn;
+    try {
+        fn = eval('(async function(log, error, input){' + text + '})');
+    } catch(e) {
+        error(e);
+    }
+    fn(log, error, input);
+
+}
+
+window.var_dump = function (name) {return eval(`(function(){return ${name}})`)()}

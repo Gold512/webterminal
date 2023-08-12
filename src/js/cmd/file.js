@@ -122,8 +122,12 @@ export async function info(fileRef) {
     let file = await resolveFileReference(fileRef);
     log(`name: ${file.name}`);
     log(`type: ${file.kind}`);
-    if(file.kind === 'file') log(`size: ${file.size}`);
 
+    if(file.kind === 'file') {
+        let fileObj = await file.getFile();
+        log(`size: ${fileObj.size.toLocaleString()} bytes`);
+        log(`last modified: ${fileObj.lastModifiedDate}`);
+    }
 }
 
 export const autocomplete = [
