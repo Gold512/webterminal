@@ -1,7 +1,7 @@
 import { getHandle } from "./mount.js";
 import { log, error, clearLog, resolveFileReference, setCurrentFolder, hasMounted, appendToPath, getCurrentFolder, setCurrentPath, currentInput, executeScript } from "./sys.js";
 import { parseCommand } from "./parser.js";
-import { fileAutoComplete } from "./autocomplete.js";
+import { fileAutoComplete, fileAutoCompleteFactory } from "./autocomplete.js";
 
 const input = document.getElementById('input');
 
@@ -191,7 +191,7 @@ registerCommand('cd', async (folderNameOrId) => {
     appendToPath(folder.name);
 });
 
-registerAutoComplete('cd', [null, fileAutoComplete])
+registerAutoComplete('cd', [null, fileAutoCompleteFactory({kind: "directory"})])
 
 registerCommand('pkg', './cmd/pkg.js');
 
@@ -209,6 +209,6 @@ registerCommand('js', async path => {
 
     executeScript(await script.getFile())
 })
-registerAutoComplete('js', [null, fileAutoComplete]);
+registerAutoComplete('js', [null, fileAutoCompleteFactory({kind: 'file'})]);
 
 log(`'mount' to mount a folder\n'list' to show list of commands`)
