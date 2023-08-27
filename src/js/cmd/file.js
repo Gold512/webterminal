@@ -16,7 +16,7 @@ async function _recursiveReplace(folder, text) {
     let matches = 0;
 
     for await (const [key, value] of folder.entries()) {
-        if(value.type === 'directory') {
+        if(value.kind === 'directory') {
             matches += await _recursiveReplace(value, text);
             continue;
         }
@@ -41,7 +41,7 @@ export async function rename(operation, ...args) {
             let matches = 0;
 
             for await (const [key, value] of folder.entries()) {
-                if(value.type === 'directory') continue;
+                if(value.kind === 'directory') continue;
 
                 const replaced = key.replaceAll(args[0], args[1] ?? '');
                 value.move(replaced);
@@ -130,8 +130,46 @@ export async function info(fileRef) {
     }
 }
 
+/**
+ * recursive foreach for folder
+ * @param {FileSystemDirectoryHandle} folder 
+ * @param {function(string, FileSystemFileHandle)} callback with name of file and the file handle
+ * @returns 
+ */
+async function forEach(folder, callback, path = '') {
+    for await (const [key, value] of folder.entries()) {
+        if(value.kind === 'directory') {
+            await forEach(value, callback, key + '/');
+            continue;
+        }
+
+        callback(path + key, value)
+    }
+}
+
+function textToDate(s) {
+    const date = new Date().toDateString();
+    s = s.replace('today', date);
+    return new Date(s);
+}
+
+/**
+ * 
+ * @param {string} date date string to search for 
+ * @param {number} variationms +- milliseconds in search, defaults to 60,000ms
+ */
+export function searchLastModified(date, variationms = 60000) {
+    date = textToDate(date).getTime();
+    let folder = getCurrentFolder();
+    forEach(folder, async (path, handle) => {
+        const file = await handle.getFile();
+        console.log(Math.abs(file.lastModified - date) < variationms)
+        if(Math.abs(file.lastModified - date) < variationms) log(path);
+    });
+}
+
 export const autocomplete = [
-    enumAutoCompleteFactory(['rename', 'list', 'remove', 'info']),
+    enumAutoCompleteFactory(['rename', 'list', 'remove', 'info', 'searchLastModified']),
     fileAutoComplete,
     fileAutoComplete
 ]
