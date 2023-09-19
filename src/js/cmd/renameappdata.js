@@ -52,7 +52,7 @@ export default async function(find, replace) {
         changes++;
 
         const fileData = await file.async('blob');
-        console.log(newPath, fileData)
+
         zip.file(newPath, fileData);
         zip.remove(path);
         resolve();
@@ -70,5 +70,5 @@ export default async function(find, replace) {
 
     saveAs(await zip.generateAsync({
         type: 'blob'
-    }), 'modifiedData.zip');
+    }), `${files[0].name.replace('.zip', '')} Modified.zip`);
 }
