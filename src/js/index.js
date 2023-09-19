@@ -195,7 +195,9 @@ registerAutoComplete('cd', [null, fileAutoCompleteFactory({kind: "directory"})])
 
 registerCommand('pkg', './cmd/pkg.js');
 
-registerCommand('sandbox', './cmd/sandbox/index.js')
+registerCommand('sandbox', './cmd/sandbox/index.js');
+
+registerCommand('renameappdata', './cmd/renameappdata.js')
 
 registerCommand('_src', (name) => {
     log(CMD[name].toString());
