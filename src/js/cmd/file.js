@@ -12,7 +12,7 @@ function renameSubDir(parent, directory) {
     parent.getDirectoryHandle
 }
 
-async function _recursiveReplace(folder, text) {
+async function _recursiveReplace(folder, text, replace) {
     let matches = 0;
 
     for await (const [key, value] of folder.entries()) {
@@ -21,10 +21,10 @@ async function _recursiveReplace(folder, text) {
             continue;
         }
 
-        const replaced = key.replaceAll(text, args[1] ?? '');
+        const replaced = key.replaceAll(text, replace ?? '');
         value.move(replaced);
 
-        if(replaced !== args[0]) matches++;
+        if(key !== replaced) matches++;
     }
 
     return matches;
@@ -46,7 +46,7 @@ export async function rename(operation, ...args) {
                 const replaced = key.replaceAll(args[0], args[1] ?? '');
                 value.move(replaced);
 
-                if(replaced !== args[0]) matches++;
+                if(replaced !== key) matches++;
             }
 
             log(`File name replace: ${matches} file(s) renamed`);
@@ -56,7 +56,7 @@ export async function rename(operation, ...args) {
 
         case 'recursive-replace': {
             if(!args[0]) return error('no text to replace');
-            let matches = await _recursiveReplace(folder, args[0]);
+            let matches = await _recursiveReplace(folder, args[0], args[1]);
             log(`File name replace (recursive): ${matches} file(s) renamed`)
             break;
         }
