@@ -1,5 +1,5 @@
 import { getHandle } from "./mount.js";
-import { log, error, clearLog, resolveFileReference, setCurrentFolder, hasMounted, appendToPath, getCurrentFolder, setCurrentPath, currentInput, executeScript, executeModule } from "./sys.js";
+import { log, error, clearLog, resolveFileReference, setCurrentFolder, hasMounted, appendToPath, getCurrentFolder, setCurrentPath, currentInput, executeScript, executeModule, getCurrentPath } from "./sys.js";
 import { parseCommand } from "./parser.js";
 import { fileAutoComplete, fileAutoCompleteFactory } from "./autocomplete.js";
 
@@ -180,6 +180,31 @@ registerCommand('cd', async (folderNameOrId) => {
     if(folderNameOrId === '/') {
         setCurrentPath(window.root.name);
         setCurrentFolder(window.root);
+        return;
+    }
+
+    // allow basic traversal
+    if(folderNameOrId === '../') {
+        const originalname = window.root.name;
+        const originalFolder = window.root;
+        const newPath = getCurrentPath().split('/').slice(1, -1);
+        
+        setCurrentPath(window.root.name);
+        setCurrentFolder(window.root);
+
+        for(let i in newPath) {
+            const e = newPath[i];
+            let folder = await resolveFileReference(e);
+            if(!(folder instanceof FileSystemDirectoryHandle)) {
+                setCurrentPath(originalname);
+                setCurrentFolder(originalFolder);
+                return error(e + ' is not a directory');
+            }
+
+            setCurrentFolder(folder);
+            appendToPath(folder.name);
+        }
+
         return;
     }
 

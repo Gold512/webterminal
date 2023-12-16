@@ -21,6 +21,7 @@ export async function fileAutoComplete(value, parsed, index) {
  */
 export function fileAutoCompleteFactory(assertion) {
     return async function(value, parsed, index) {
+        value = value.toLowerCase();
         const folder = getCurrentFolder();
         let results = [];
 
