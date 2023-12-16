@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Terminal</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <script src="./src/js/index.js" type="module"></script>
+    <script src="./src/lib/FileSaver.min.js" async></script>
+    <script src="./src/lib/jszip.min.js" async></script>
+    <div id="scroll-container">
+        <pre id="output"></pre>
+
+        <div class="input-box">
+            <span class="prefix" id="path">&gt;</span>
+            <input placeholder="" id="input" autocomplete="off" autofocus>
+        </div>
+    </div>
+</body>
+</html>
