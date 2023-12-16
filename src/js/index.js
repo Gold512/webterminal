@@ -1,5 +1,5 @@
 import { getHandle } from "./mount.js";
-import { log, error, clearLog, resolveFileReference, setCurrentFolder, hasMounted, appendToPath, getCurrentFolder, setCurrentPath, currentInput, executeScript } from "./sys.js";
+import { log, error, clearLog, resolveFileReference, setCurrentFolder, hasMounted, appendToPath, getCurrentFolder, setCurrentPath, currentInput, executeScript, executeModule } from "./sys.js";
 import { parseCommand } from "./parser.js";
 import { fileAutoComplete, fileAutoCompleteFactory } from "./autocomplete.js";
 
@@ -207,8 +207,16 @@ registerCommand('js', async path => {
     let script = await resolveFileReference(path);
     if(!script) return error('no script found');
 
-    executeScript(await script.getFile())
-})
+    executeScript(await script.getFile());
+});
 registerAutoComplete('js', [null, fileAutoCompleteFactory({kind: 'file'})]);
+
+registerCommand('jscall', async (path, callSig) => {
+    if(!hasMounted()) return error('No directory mounted');
+    let script = await resolveFileReference(path);
+    if(!script) return error('no script found');
+    executeModule(await script.getFile(), callSig);
+});
+registerAutoComplete('jscall', [null, fileAutoCompleteFactory({kind: 'file'})]);
 
 log(`'mount' to mount a folder\n'list' to show list of commands`)

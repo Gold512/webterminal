@@ -100,21 +100,33 @@ export async function resolveFileReference(relativeNameOrId) {
     return null;
 }
 
+/**
+ * Import module from string
+ * @param {string} str 
+ * @returns 
+ */
 function doimport (str) {
-    if (globalThis.URL.createObjectURL) {
-        const blob = new Blob([str], { type: 'text/javascript' })
-        const url = URL.createObjectURL(blob)
-        const module = import(url)
-        URL.revokeObjectURL(url) // GC objectURLs
-        return module
-    }
-    
-    const url = "data:text/javascript;base64," + btoa(moduleData)
-    return import(url)
+    const blob = new Blob([str], { type: 'text/javascript' })
+    const url = URL.createObjectURL(blob)
+    const module = import(url)
+    URL.revokeObjectURL(url) // GC objectURLs
+    return module
 }
 
-export function executeModule(file) {
-    
+export async function executeModule(file, callSignature) {
+    const text = await file.text();
+    const module = await doimport(text);
+    if(!callSignature) {
+        log(Object.keys(module).join('\n'));
+        return;
+    }
+
+    try {
+        let fn = eval(`(async function(m) {return await m.${callSignature}})`);
+        log(await fn(module));
+    } catch(e) {
+        error(e);
+    }
 }
 
 /**
@@ -126,11 +138,8 @@ export async function executeScript(file) {
     let fn;
     try {
         fn = eval('(async function(log, error, input){' + text + '})');
+        fn(log, error, input);
     } catch(e) {
         error(e);
     }
-    fn(log, error, input);
-
 }
-
-window.var_dump = function (name) {return eval(`(function(){return ${name}})`)()}

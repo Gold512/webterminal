@@ -12,22 +12,42 @@ function renameSubDir(parent, directory) {
     parent.getDirectoryHandle
 }
 
-async function _recursiveReplace(folder, text, replace) {
+async function _recursiveReplace(folder, text, replace = '', path = '') {
     let matches = 0;
 
-    for await (const [key, value] of folder.entries()) {
-        if(value.kind === 'directory') {
-            matches += await _recursiveReplace(value, text);
-            continue;
+    try {
+        for await (const [key, value] of folder.entries()) {
+            if(value.kind === 'directory') {
+                matches += await _recursiveReplace(value, text, replace, path + '/' + key);
+                continue;
+            }
+
+            const replaced = key.replaceAll(text, replace);
+
+            if(key !== replaced){
+                try {
+                    value.move(replaced);
+                    matches++;
+                } catch(e) {
+                    error('unable to rename ' + path + '/' + key);  
+                }
+            }
         }
-
-        const replaced = key.replaceAll(text, replace ?? '');
-        value.move(replaced);
-
-        if(key !== replaced) matches++;
+    } catch(e) {
+        error('unable to get file in directory ' + path);
     }
+    
 
     return matches;
+}
+
+export function search(...args) {
+    const folder = getCurrentFolder();
+    if(!folder) return error('no mounted directory');
+    if(!args[0]) return error('no text to search');
+    forEach(folder, (path, filename, handle) => {
+        if(filename.includes(args[0])) log(path);
+    }, true);
 }
 
 export async function rename(operation, ...args) {
@@ -44,9 +64,11 @@ export async function rename(operation, ...args) {
                 if(value.kind === 'directory') continue;
 
                 const replaced = key.replaceAll(args[0], args[1] ?? '');
-                value.move(replaced);
 
-                if(replaced !== key) matches++;
+                if(replaced !== key) {
+                    matches++;
+                    value.move(replaced);
+                }
             }
 
             log(`File name replace: ${matches} file(s) renamed`);
@@ -56,7 +78,7 @@ export async function rename(operation, ...args) {
 
         case 'recursive-replace': {
             if(!args[0]) return error('no text to replace');
-            let matches = await _recursiveReplace(folder, args[0], args[1]);
+            let matches = await _recursiveReplace(folder, args[0], args[1] ?? '');
             log(`File name replace (recursive): ${matches} file(s) renamed`)
             break;
         }
@@ -131,19 +153,29 @@ export async function info(fileRef) {
 }
 
 /**
+ * @typedef {string} path
+ */
+
+/**
+ * @typedef {string} filename
+ */
+
+/**
  * recursive foreach for folder
  * @param {FileSystemDirectoryHandle} folder 
- * @param {function(string, FileSystemFileHandle)} callback with name of file and the file handle
+ * @param {function(path, filename, FileSystemFileHandle)} callback with name of file and the file handle
  * @returns 
  */
-async function forEach(folder, callback, path = '') {
+async function forEach(folder, callback, callbackOnFolder = false, path = '') {
     for await (const [key, value] of folder.entries()) {
         if(value.kind === 'directory') {
-            await forEach(value, callback, key + '/');
+            if(callbackOnFolder) callback(path + key, key, value);
+
+            await forEach(value, callback, callbackOnFolder, key + '/');
             continue;
         }
 
-        callback(path + key, value)
+        callback(path + key, key, value)
     }
 }
 
@@ -161,7 +193,7 @@ function textToDate(s) {
 export function searchLastModified(date, variationms = 60000) {
     date = textToDate(date).getTime();
     let folder = getCurrentFolder();
-    forEach(folder, async (path, handle) => {
+    forEach(folder, async (path, _, handle) => {
         const file = await handle.getFile();
         console.log(Math.abs(file.lastModified - date) < variationms)
         if(Math.abs(file.lastModified - date) < variationms) log(path);
