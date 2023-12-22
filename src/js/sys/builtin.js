@@ -40,10 +40,11 @@ export const terminalBuiltin = {
 		const text = await (await fileHandle.getFile()).text();
 		this.terminal.log(text + '\n');
 	},
-	async df() {
+	async storage() {
 		const space = await navigator.storage.estimate();
 		this.terminal.log(`Storage: ${formatBytes(space.usage)} / ${formatBytes(space.quota)}\n`)
-	}
+	},
+	async df() { await this.storage() }
 }
 
 function extractCommands(o) {

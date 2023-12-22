@@ -33,12 +33,12 @@ class FS {
 
     /**
      * Get directory handle 
-     * @param {string} path 
+     * @param {string|string[]} path 
      * @param {string[]} currentPath 
      * @returns {Promise<FileSystemDirectoryHandle>}
      */
 	async getDirectory(path, currentPath = ['opfs']) {
-        const resolved = resolvePath(path, currentPath);
+        const resolved = Array.isArray(path) ? path : resolvePath(path, currentPath);
         let ptr = rootfs[resolved[0]];
         try { 
             for(let i = 1; i < resolved.length; i++) {
@@ -115,9 +115,9 @@ class MountContainer {
         throw new Error('mount container cannot have files')
     }
 
-    getDirectoryHandle(name) {
+    async getDirectoryHandle(name) {
         if(!this.#directories.hasOwnProperty(name)) throw new Error('directory does not exist');
-        if(!this.#permissionRequestCache.has(name)) verifyPermission(this.#directories[name], true);
+        if(!this.#permissionRequestCache.has(name)) await verifyPermission(this.#directories[name], true);
         return this.#directories[name]
     }
 }
@@ -240,3 +240,4 @@ export const rootfs = {
 }
 
 window.rootfs = rootfs;
+window.fs = fs;

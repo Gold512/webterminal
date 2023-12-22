@@ -75,31 +75,32 @@ export class Terminal {
             if(selectedSectionIndex === 0) {
                 const autocompleteFn = builtinAutocomplete[Symbol.for('name')];
                 let newComponent;
-                if(this.originalPart === '') {
+                if(this.originalPart === null) {
                     this.tabindex = 0;
                     this.originalPart = parsedCmd[0];
                     newComponent = await autocompleteFn.bind(this)(parsedCmd[0] ?? '', parsedCmd, selectedSectionIndex);
                 } else {
                     this.tabindex++;
                     parsedCmd[0] = this.originalPart;
-                    newComponent = await autocompleteFn.bind(this)(this.originalPart ?? '', parsedCmd, selectedSectionIndex); 
+                    newComponent = await autocompleteFn.bind(this)(this.originalPart ?? '', parsedCmd, selectedSectionIndex);
+                    if(this.tabindex >= newComponent.length) this.tabindex = 0;
                 }
 
-                if(this.tabindex >= newComponent.length) this.tabindex = 0;
                 parsedCmd[0] = newComponent[this.tabindex];
                 input.value = parsedCmd.join(' ');
                 return;
             }
 
-            let autocomplete = this.tabindex === 0 ? getCommandAutocomplete(name) : this.prevAutocomplete;
+            let autocomplete = this.originalPart === null ? getCommandAutocomplete(name) : this.prevAutocomplete;
             if(autocomplete) {
                 let newComponent
                 const autocompleteFn = autocomplete[selectedSectionIndex - 1];
                 if(!autocompleteFn) return;
     
-                if(this.originalPart === '') {
+                if(this.originalPart === null) {
                     this.tabindex = 0; 
                     this.originalPart = parsedCmd[selectedSectionIndex];
+                    this.prevAutocomplete = autocomplete;
                     newComponent = await autocompleteFn.bind(this)(parsedCmd[selectedSectionIndex] ?? '', parsedCmd, selectedSectionIndex);
                 } else {
                     this.tabindex++;
@@ -123,7 +124,7 @@ export class Terminal {
         }
     
         this.tabindex = 0;
-        this.originalPart = '';
+        this.originalPart = null;
     }
 }
 
