@@ -1,31 +1,30 @@
 // this module should handle command execution and autocomplete
 
-import { terminalBuiltin } from "./builtin.js";
+import { builtinAutocomplete, terminalBuiltin } from "./builtin.js";
 
-export function runCommand(terminal, command) {
+export async function runCommand(terminal, command) {
     const parsed = parseCommand(command);
     const cmdName = parsed.shift();
     
     if(terminalBuiltin[cmdName]) {
         terminalBuiltin.terminal = terminal;
         try {
-            const output = terminalBuiltin[cmdName](...parsed);
+            const output = await terminalBuiltin[cmdName](...parsed);
         } catch(e) {
             terminal.log(e.message);
+            console.error(e)
         }
     } else {
         terminal.log(`Command '${cmdName}' not found`);
     }
 }
 
-export function getCommandAutocomplete() {
-    
+export function getCommandAutocomplete(cmdName) {
+    if(builtinAutocomplete.hasOwnProperty(cmdName)) return builtinAutocomplete[cmdName];
 }
 
-
-
 // parse command 
-function parseCommand(s) {
+export function parseCommand(s) {
     function increment() {
         index++;
         res.push('');

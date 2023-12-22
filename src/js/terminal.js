@@ -1,5 +1,5 @@
-import { terminalBuiltin } from "./sys/builtin.js";
-import { runCommand } from "./sys/cmd.js";
+import { builtinAutocomplete, terminalBuiltin } from "./sys/builtin.js";
+import { getCommandAutocomplete, parseCommand, runCommand } from "./sys/cmd.js";
 import { fs } from "./sys/fs.js";
 
 export class Terminal {
@@ -7,6 +7,8 @@ export class Terminal {
         this.tabindex = 0;
         this.originalPart = '';
         this.lastCommand = '';
+        // cache autocomplete function for performance
+        this.prevAutocomplete = null;
 
         this.input = input;
         this.label = label;
@@ -63,31 +65,51 @@ export class Terminal {
             return;
         }
     
-        if(ev.key === 'Tab' && false) {
+        if(ev.key === 'Tab') {
             ev.preventDefault();
-    
             const parsedCmd = parseCommand(input.value);
             const name = parsedCmd[0];
-            let autocomplete = CMDAutoComplete[name];
+            const selectedSectionIndex = getSelectedSection(input.selectionStart, parsedCmd);
+
+            // command name autocomplete
+            if(selectedSectionIndex === 0) {
+                const autocompleteFn = builtinAutocomplete[Symbol.for('name')];
+                let newComponent;
+                if(this.originalPart === '') {
+                    this.tabindex = 0;
+                    this.originalPart = parsedCmd[0];
+                    newComponent = await autocompleteFn.bind(this)(parsedCmd[0] ?? '', parsedCmd, selectedSectionIndex);
+                } else {
+                    this.tabindex++;
+                    parsedCmd[0] = this.originalPart;
+                    newComponent = await autocompleteFn.bind(this)(this.originalPart ?? '', parsedCmd, selectedSectionIndex); 
+                }
+
+                if(this.tabindex >= newComponent.length) this.tabindex = 0;
+                parsedCmd[0] = newComponent[this.tabindex];
+                input.value = parsedCmd.join(' ');
+                return;
+            }
+
+            let autocomplete = this.tabindex === 0 ? getCommandAutocomplete(name) : this.prevAutocomplete;
             if(autocomplete) {
                 let newComponent
-                const selectedSectionIndex = getSelectedSection(input.selectionStart, parsedCmd);
-                const autocompleteFn = autocomplete[selectedSectionIndex];
+                const autocompleteFn = autocomplete[selectedSectionIndex - 1];
                 if(!autocompleteFn) return;
     
-                if(originalPart === '') {
-                    tabindex = 0; 
-                    originalPart = parsedCmd[selectedSectionIndex];
-                    newComponent = await autocompleteFn(parsedCmd[selectedSectionIndex], parsedCmd, selectedSectionIndex);
+                if(this.originalPart === '') {
+                    this.tabindex = 0; 
+                    this.originalPart = parsedCmd[selectedSectionIndex];
+                    newComponent = await autocompleteFn.bind(this)(parsedCmd[selectedSectionIndex] ?? '', parsedCmd, selectedSectionIndex);
                 } else {
-                    tabindex++;
-                    parsedCmd[selectedSectionIndex] = originalPart;
-                    newComponent = await autocompleteFn(originalPart, parsedCmd, selectedSectionIndex);
-                    if(tabindex >= newComponent.length) tabindex = 0;
+                    this.tabindex++;
+                    parsedCmd[selectedSectionIndex] = this.originalPart;
+                    newComponent = await autocompleteFn.bind(this)(this.originalPart ?? '', parsedCmd, selectedSectionIndex);
+                    if(this.tabindex >= newComponent.length) this.tabindex = 0;
                 }
     
                 if(newComponent === undefined || newComponent.length === 0) return;
-                parsedCmd[selectedSectionIndex] = newComponent[tabindex];
+                parsedCmd[selectedSectionIndex] = newComponent[this.tabindex];
                 input.value = parsedCmd.join(' ');
             }
     
@@ -97,7 +119,7 @@ export class Terminal {
         if(ev.key === 'ArrowUp') {
             ev.preventDefault()
             input.value = this.lastCommand;
-            input.selectionStart = this.lastCommand.length
+            input.selectionStart = this.lastCommand.length;
         }
     
         this.tabindex = 0;
@@ -112,4 +134,17 @@ const containerSymbols = {
 function pathToString(path) {
     const container = path[0];
     return containerSymbols[container] + path.slice(1).join('/');
+}
+
+function getSelectedSection(cursorIdx, parsed) {
+    for(let i = 0; i < parsed.length; i++) {
+        const sect = parsed[i];
+        if(cursorIdx <= sect.length) return i;
+        cursorIdx -= sect.length + 1 // add one to include the space after the section
+    }
+
+    // if it is still 1 there is a space at the end
+    if(cursorIdx === 0) return parsed.length;
+
+    return parsed.length - 1;
 }

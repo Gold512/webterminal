@@ -10,6 +10,12 @@ const debug = false;
 
 // API Declaration
 class FS {
+    /**
+     * Get file handle 
+     * @param {string} path 
+     * @param {string[]} currentPath 
+     * @returns {Promise<FileSystemFileHandle>}
+     */
 	async getFile(path, currentPath = ['opfs']) {
         const resolved = resolvePath(path, currentPath);
         let ptr = rootfs[resolved[0]];
@@ -25,6 +31,12 @@ class FS {
         return ptr;
 	}
 
+    /**
+     * Get directory handle 
+     * @param {string} path 
+     * @param {string[]} currentPath 
+     * @returns {Promise<FileSystemDirectoryHandle>}
+     */
 	async getDirectory(path, currentPath = ['opfs']) {
         const resolved = resolvePath(path, currentPath);
         let ptr = rootfs[resolved[0]];
@@ -45,8 +57,8 @@ class FS {
         return container + path.slice(1).join('/');
     }
 
-    mountDirectory() {
-        rootfs.mnt.mount();
+    async mountDirectory() {
+        await rootfs.mnt.mount();
     }
 
     resolvePath = resolvePath
@@ -134,6 +146,8 @@ function resolvePath(path, currentPath = ['opfs']) {
     // inherit container
     const container = currentPath.shift();
     const newPath = path.split('/');
+    if(newPath[newPath.length - 1] === '') newPath.pop();
+
     for(let i = 0; i < newPath.length; i++) {
         if(newPath[i] === '..') {
             currentPath.pop();
@@ -141,6 +155,7 @@ function resolvePath(path, currentPath = ['opfs']) {
             currentPath.push(newPath[i])
         }
     }
+
     if(currentPath.length === 0) return [container];
     
     return [container].concat(currentPath);
