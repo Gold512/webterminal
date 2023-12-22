@@ -1,4 +1,4 @@
-import { directoryAutoComplete, enumAutoCompleteFactory } from "./autocomplete.js";
+import { directoryAutoComplete, enumAutoCompleteFactory, fileAutoComplete } from "./autocomplete.js";
 import { fs, rootfs } from "./fs.js"
 
 export const terminalBuiltin = {
@@ -37,7 +37,11 @@ export const terminalBuiltin = {
     },
 	async cat(path) {
 		const fileHandle = await fs.getFile(path, this.terminal.path);
-		const text = await (await fileHandle.getFile()).text();
+		const file = await fileHandle.getFile();
+        
+        // large file warning
+        if(file.size > 1e6 && !confirm(`File is large (${formatBytes(file.size)}) print anyway?`)) return;
+        const text = await file.text();
 		this.terminal.log(text + '\n');
 	},
 	async storage() {
@@ -65,7 +69,8 @@ export const builtinAutocomplete = {
 		}
 
 		return results;
-	}]
+	}],
+    cat: [fileAutoComplete]
 }
 
 async function toArray(asyncIterator){ 
