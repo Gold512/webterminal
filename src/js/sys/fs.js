@@ -17,7 +17,7 @@ class FS {
      * @returns {Promise<FileSystemFileHandle>}
      */
 	async getFile(path, currentPath = ['opfs']) {
-        const resolved = resolvePath(path, currentPath);
+        const resolved = Array.isArray(path) ? path : resolvePath(path, currentPath);
         let ptr = rootfs[resolved[0]];
 
         try { 
@@ -51,10 +51,45 @@ class FS {
         return ptr;
 	}
 
+    /**
+     * Write text to file, creating directories and paths recursively if necessary
+     * @param {string|string[]} path 
+     * @param {string} content text to write to file
+     * @param {string[]} currentPath current file path for resolving relative paths
+     */
+    async writeFile(path, content, currentPath = ['opfs']) {
+        const resolved = Array.isArray(path) ? path : resolvePath(path, currentPath);
+        let ptr = rootfs[resolved[0]];
+        try {
+            for(let i = 1; i < resolved.length - 1; i++) {
+                ptr = await ptr.getDirectoryHandle(resolved[i], {create: true});
+            }
+            ptr = ptr.getFileHandle(resolved[resolved.length - 1], {create: true});
+            const writable = await ptr.createWritable();
+            await writable.write(content);
+            await writable.close();
+        } catch(e) {
+            throw new Error('unable to write file');
+        }
+    }
+
     stringifyPath(path) {
         const pathCipher = {'opfs':'/','mnt':'~'}
         const container = pathCipher[path[0]];
         return container + path.slice(1).join('/');
+    }
+
+    /**
+     * Stringifies a path but makes it relative if possible. Usually results in shorter paths
+     * @param {string[]} path 
+     * @param {string[]} currentPath 
+     */
+    relativeStringifyPath(path, currentPath) {
+        if(path[0] !== currentPath[0]) return this.stringifyPath(path);
+        for(let i = 1; i < path.length; i++) {
+            if(path[i] === currentPath[i]) continue;
+            return path.slice(i).join('/');
+        }
     }
 
     async mountDirectory() {
