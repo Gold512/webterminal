@@ -45,6 +45,7 @@ class FS {
                 ptr = await ptr.getDirectoryHandle(resolved[i]);
             }
         } catch(e) {
+            if(e instanceof FSPermissionDeniedError) throw e;
             throw new Error(`directory '${path}' does not exist`);
         }
 
@@ -152,8 +153,17 @@ class MountContainer {
 
     async getDirectoryHandle(name) {
         if(!this.#directories.hasOwnProperty(name)) throw new Error('directory does not exist');
-        if(!this.#permissionRequestCache.has(name)) await verifyPermission(this.#directories[name], true);
+        if(!this.#permissionRequestCache.has(name)) {
+            const status = await verifyPermission(this.#directories[name], true);
+            if(status === false) throw new FSPermissionDeniedError(name);
+        }
         return this.#directories[name]
+    }
+}
+
+class FSPermissionDeniedError extends Error {
+    constructor(fileName) {
+        super(`permission denied: unable to access '~${fileName}'`);
     }
 }
 

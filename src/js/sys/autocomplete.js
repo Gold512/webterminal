@@ -19,6 +19,8 @@ export async function fileAutoComplete(value, parsed, index) {
 	if(['~','/'].includes(value)) parsedPath.push('');
 
 	const folder = await fs.getDirectory(parsedPath.slice(0, -1), this.path);
+	if(folder === undefined) return [];
+
 	let results = [];
 
 	const search = parsedPath[parsedPath.length - 1].toLowerCase();
@@ -44,6 +46,8 @@ export async function directoryAutoComplete(value, parsed, index) {
 	if(['~','/'].includes(value)) parsedPath.push('');
 
 	const folder = await fs.getDirectory(parsedPath.slice(0, -1), this.path);
+	if(folder === undefined) return [];
+	
 	let results = [];
 
 	const search = parsedPath[parsedPath.length - 1].toLowerCase();
