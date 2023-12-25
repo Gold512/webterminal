@@ -6,10 +6,18 @@
 
 import { createStore, get, set, entries, del } from "../../lib/idb_keyval.js";
 const fileStore = createStore('files', 'file-store');
-const debug = false;
 
 // API Declaration
 class FS {
+    constructor(currentPath = null) {
+        this.currentPath = currentPath;
+    }
+
+    async getCurrentDirectory() {
+        if(!this.currentPath) throw new Error('No current directory');
+        return await this.getDirectory(this.currentPath);
+    }
+
     /**
      * Get file handle 
      * @param {string} path 
@@ -17,6 +25,7 @@ class FS {
      * @returns {Promise<FileSystemFileHandle>}
      */
 	async getFile(path, currentPath = ['opfs']) {
+        if(this.currentPath) currentPath = this.currentPath;
         const resolved = Array.isArray(path) ? path : resolvePath(path, currentPath);
         let ptr = rootfs[resolved[0]];
 
@@ -38,6 +47,7 @@ class FS {
      * @returns {Promise<FileSystemDirectoryHandle>}
      */
 	async getDirectory(path, currentPath = ['opfs']) {
+        if(this.currentPath) currentPath = this.currentPath;
         const resolved = Array.isArray(path) ? path : resolvePath(path, currentPath);
         let ptr = rootfs[resolved[0]];
         try { 
@@ -59,19 +69,34 @@ class FS {
      * @param {string[]} currentPath current file path for resolving relative paths
      */
     async writeFile(path, content, currentPath = ['opfs']) {
+        if(this.currentPath) currentPath = this.currentPath;
         const resolved = Array.isArray(path) ? path : resolvePath(path, currentPath);
         let ptr = rootfs[resolved[0]];
         try {
             for(let i = 1; i < resolved.length - 1; i++) {
                 ptr = await ptr.getDirectoryHandle(resolved[i], {create: true});
             }
-            ptr = ptr.getFileHandle(resolved[resolved.length - 1], {create: true});
+            ptr = await ptr.getFileHandle(resolved[resolved.length - 1], {create: true});
+
             const writable = await ptr.createWritable();
             await writable.write(content);
             await writable.close();
         } catch(e) {
+            console.error(e);
             throw new Error('unable to write file');
         }
+    }
+
+    /**
+     * read file contents
+     * @param {string|string[]} path filepath
+     * @param {string[]} currentPath path of current directory
+     */
+    async readFile(path, currentPath = ['opfs']) {
+        if(this.currentPath) currentPath = this.currentPath;
+        const fileHandle = await this.getFile(path, currentPath);
+        const file = await fileHandle.getFile();
+        return await file.text();
     }
 
     stringifyPath(path) {

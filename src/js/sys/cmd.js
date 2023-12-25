@@ -1,6 +1,8 @@
 // this module should handle command execution and autocomplete
 
 import { builtinAutocomplete, terminalBuiltin } from "./builtin.js";
+import { fs } from "./fs.js";
+import { runScript } from "./run_script.js";
 
 export async function runCommand(terminal, command) {
     const parsed = parseCommand(command);
@@ -9,14 +11,22 @@ export async function runCommand(terminal, command) {
     if(terminalBuiltin[cmdName]) {
         terminalBuiltin.terminal = terminal;
         try {
-            const output = await terminalBuiltin[cmdName](...parsed);
+            await terminalBuiltin[cmdName](...parsed);
         } catch(e) {
             terminal.log(e.message);
             console.error(e)
         }
-    } else {
-        terminal.log(`Command '${cmdName}' not found`);
+
+        return;
     }
+    
+    // execute script from /src/*.js
+    try {
+        await runScript(terminal, `/src/${cmdName}.js`);
+        return;
+    } catch(e) {}
+
+    terminal.log(`Command '${cmdName}' not found`);
 }
 
 export function getCommandAutocomplete(cmdName) {
@@ -40,7 +50,7 @@ export function parseCommand(s) {
                     res[index] += s[i+1];
                     i++;
                 } else {
-                    throw new Error('Command Parse - escape character cannot be at the last character. If this is intentional, escape it (ie. \\\\)')
+                    throw new Error('Command Parse - escape character cannot be the last character. If this is intentional, escape it (ie. \\\\)')
                 }
                 continue;
             }

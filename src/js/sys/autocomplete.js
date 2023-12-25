@@ -30,11 +30,9 @@ export async function fileAutoComplete(value, parsed, index) {
 	const useQuote = prefix.includes(' ');
 
 	for await (const [key, handle] of folder.entries()) {
-		if(handle.kind !== 'file') continue;
-
 		if(key.slice(0, search.length).toLowerCase() === search) {
-			const completion = (useQuote || key.includes(' ')) ? `'${key}'` : key;
-			results.push(prefix + completion);
+			const completion = (useQuote || key.includes(' ')) ? `'${prefix + key}'` : prefix + key;
+			results.push(completion);
 		}
 	}
 
@@ -60,8 +58,8 @@ export async function directoryAutoComplete(value, parsed, index) {
 		if(handle.kind !== 'directory') continue;
 
 		if(key.slice(0, search.length).toLowerCase() === search) {
-			const completion = (useQuote || key.includes(' ')) ? `'${key}'` : key;
-			results.push(prefix + completion);
+			const completion = (useQuote || key.includes(' ')) ? `'${prefix + key}'` : prefix + key;
+			results.push(completion);
 		}
 	}
 

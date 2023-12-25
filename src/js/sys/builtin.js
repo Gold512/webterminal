@@ -1,5 +1,6 @@
 import { directoryAutoComplete, enumAutoCompleteFactory, fileAutoComplete } from "./autocomplete.js";
 import { fs, rootfs } from "./fs.js"
+import { runScript } from "./run_script.js";
 
 export const terminalBuiltin = {
     /**
@@ -48,7 +49,30 @@ export const terminalBuiltin = {
 		const space = await navigator.storage.estimate();
 		this.terminal.log(`Storage: ${formatBytes(space.usage)} / ${formatBytes(space.quota)}\n`)
 	},
-	async df() { await this.storage() }
+	async df() { await this.storage() },
+	async js(path) {
+		const resolved = fs.resolvePath(path, this.terminal.path);
+		runScript(this.terminal, resolved);
+	},
+	clear() {
+		this.terminal.clear();
+	},
+
+	/**
+	 * 
+	 * @param {string} script 
+	 * @returns 
+	 */
+	async install(script) {
+		if(!script.match(/^[A-Za-z0-9_+-\.]+$/)) return this.terminal.log('Invalid script name');
+		const path = `/src/js/cmd/${script}.js`;
+		this.terminal.log('attempting GET ' + location.origin + path)
+		const response = await fetch(path);
+		const text = await response.text();
+		this.terminal.log('Downloaded ' + path);
+		fs.writeFile(`/src/${script}.js`, text);
+		this.terminal.log(`Written to /src/${script}.js`);
+	}
 }
 
 function extractCommands(o) {
@@ -70,7 +94,8 @@ export const builtinAutocomplete = {
 
 		return results;
 	}],
-    cat: [fileAutoComplete]
+    cat: [fileAutoComplete],
+	js: [fileAutoComplete]
 }
 
 async function toArray(asyncIterator){ 

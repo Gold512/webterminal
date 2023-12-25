@@ -25,24 +25,57 @@ export class Terminal {
         this.label.innerText = fs.stringifyPath(this.path) + ' >'
     }
 
-    async prompt(prompt = 'input:') {
+    async prompt(prompt = 'input:', defaultValue = '') {
         if(this.currentInput) throw new Error('Input already open');
         let resolve;
         const p = new Promise(res => {
             resolve = res;
         });
         const oldPath = this.path;
-        this.currentInput = () => {
-            resolve();
-            this.label.innerText = pathToString(oldPath)
+        this.currentInput = v => {
+            this.log(prompt + v);
+            this.label.innerText = fs.stringifyPath(oldPath) + ' >';
+
+            resolve(v);
+            this.currentInput = null;
         };
         this.label.innerText = prompt;
+
+        if(defaultValue) {
+            this.input.value = defaultValue;
+            this.input.selectionStart = 0;
+            this.input.selectionEnd = defaultValue.length;
+        }
+
+        return p;
+    }
+
+    async confirm(prompt = 'confirm') {
+        if(this.currentInput) throw new Error('Input already open');
+        let resolve;
+        const p = new Promise(res => {
+            resolve = res;
+        });
+        const oldPath = this.path;
+        this.currentInput = v => {
+            this.log(prompt + ' (y/n): ' + v);
+            this.label.innerText = fs.stringifyPath(oldPath) + ' >';
+
+            resolve(v === 'y');
+            this.currentInput = null;
+        };
+        this.label.innerText = prompt + ' (y/n):';
+
         return p;
     }
 
     log(msg) {
         this.output.textContent += msg + '\n';
         this.scrollContainer.scrollTop = this.scrollContainer.scrollHeight - this.scrollContainer.offsetHeight;
+    }
+
+    clear() {
+        this.output.textContent = '';
     }
 
     async #keydown(ev) {
@@ -126,15 +159,6 @@ export class Terminal {
         this.tabindex = 0;
         this.originalPart = null;
     }
-}
-
-const containerSymbols = {
-    'opfs': '/',
-    'mnt': '~'
-}
-function pathToString(path) {
-    const container = path[0];
-    return containerSymbols[container] + path.slice(1).join('/');
 }
 
 function getSelectedSection(cursorIdx, parsed) {
