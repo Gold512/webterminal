@@ -1,6 +1,7 @@
 // this module should handle command execution and autocomplete
 
 import { builtinAutocomplete, terminalBuiltin } from "./builtin.js";
+import { EXECUTION_PATH_FOLDER } from "./const.js";
 import { runScript } from "./run_script.js";
 
 export async function runCommand(terminal, command) {
@@ -19,9 +20,9 @@ export async function runCommand(terminal, command) {
         return;
     }
     
-    // execute script from /src/*.js
+    // execute script from /src/cmd/*.js
     try {
-        await runScript(terminal, `/src/${cmdName}.js`);
+        await runScript(terminal, `${EXECUTION_PATH_FOLDER}${cmdName}.js`);
         return;
     } catch(e) {}
 

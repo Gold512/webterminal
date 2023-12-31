@@ -99,6 +99,38 @@ class FS {
         return await file.text();
     }
 
+    async deleteFile(path, currentPath = ['opfs']) {
+        if(this.currentPath) currentPath = this.currentPath;
+        const resolved = Array.isArray(path) ? path : resolvePath(path, currentPath);
+        let ptr = rootfs[resolved[0]];
+        try {
+            for(let i = 1; i < resolved.length - 1; i++) {
+                ptr = await ptr.getDirectoryHandle(resolved[i], {create: true});
+            }
+
+            const name = resolved[resolved.length - 1];
+            
+            // try to delete file
+            try {
+                await ptr.removeEntry(name);
+                return;
+            } catch(e){}
+
+            // try to delete dir
+            try {
+                const dir = await ptr.getDirectoryHandle(name);
+                await recursiveDeleteDir(dir);
+                await ptr.removeEntry(name);
+
+                return;
+            } catch(e) {}
+            throw new Error();
+        } catch(e) {
+            console.error(e);
+            throw new Error(`unable to delete file or directory at '${fs.stringifyPath(resolved)}'. check if anything exists at this path.`);
+        }
+    }
+
     stringifyPath(path) {
         const pathCipher = {'opfs':'/','mnt':'~'}
         const container = pathCipher[path[0]];
@@ -229,6 +261,15 @@ function resolvePath(path, currentPath = ['opfs']) {
     if(currentPath.length === 0) return [container];
     
     return [container].concat(currentPath);
+}
+
+async function recursiveDeleteDir(dir) {
+    for await(const [key, handle] of dir.entries()) {
+        if(handle.kind === 'directory') {
+            await recursiveDeleteDir(handle)
+        }
+        await dir.removeEntry(key);
+    }
 }
 
 

@@ -1,4 +1,5 @@
 import { directoryAutoComplete, enumAutoCompleteFactory, fileAutoComplete } from "./autocomplete.js";
+import { EXECUTION_PATH_FOLDER } from "./const.js";
 import { fs, rootfs } from "./fs.js"
 import { runScript } from "./run_script.js";
 
@@ -63,16 +64,48 @@ export const terminalBuiltin = {
 	 * @param {string} script 
 	 * @returns 
 	 */
-	async install(script) {
-		if(!script.match(/^[A-Za-z0-9_+-\.]+$/)) return this.terminal.log('Invalid script name');
+	async pkg(subcommand, script) {
+		if(!pkgManager.hasOwnProperty(subcommand)) throw new Error(`package manager does not have subcommand '${subcommand}'\nValid subcommands: ${extractCommands(pkgManager)}`);
+        pkgManager[subcommand](script);
+	},
+    async help() {
+        // show list of commands 
+        this.terminal.log('list of commands:');
+        this.terminal.log(extractCommands(this).join(' '));
+        
+        const dir = await fs.getDirectory('/src');
+        const arr = [];
+        for await (const [key, value] of dir.entries()) {
+            if(key.slice(key.length - 3) === '.js') {
+                arr.push(key.slice(0, -3));
+            }
+        }
+
+        this.terminal.log(arr.join(' '));
+    },
+    async rm(path) {
+        await fs.deleteFile(path, this.terminal.path);
+        this.terminal.log('successfully deleted ' + fs.stringifyPath(fs.resolvePath(path, this.terminal.path)))
+    }
+}
+
+const pkgManager = {
+    async add(script) {
+        if(script === undefined || !script.match(/^[A-Za-z0-9_+-\.]+$/)) return this.terminal.log('Invalid script name');
 		const path = `/src/js/cmd/${script}.js`;
-		this.terminal.log('attempting GET ' + location.origin + path)
-		const response = await fetch(path);
-		const text = await response.text();
-		this.terminal.log('Downloaded ' + path);
-		fs.writeFile(`/src/${script}.js`, text);
-		this.terminal.log(`Written to /src/${script}.js`);
-	}
+		this.terminal.log('GET ' + location.origin + path);
+        
+        const response = await fetch(path);
+        if(response.status === 404) return this.terminal.log('file not found')
+        const text = await response.text();
+		this.terminal.log('Downloaded ' + script + '.js successfully');
+		fs.writeFile(`${EXECUTION_PATH_FOLDER}${script}.js`, text);
+		this.terminal.log(`Written to ${EXECUTION_PATH_FOLDER}${script}.js`);
+    },
+    async remove(script) {
+        if(script === undefined || !script.match(/^[A-Za-z0-9_+-\.]+$/)) return this.terminal.log('Invalid script name');
+        fs.deleteFile(`${EXECUTION_PATH_FOLDER}${script}.js`);
+    }
 }
 
 function extractCommands(o) {
@@ -95,7 +128,8 @@ export const builtinAutocomplete = {
 		return results;
 	}],
     cat: [fileAutoComplete],
-	js: [fileAutoComplete]
+	js: [fileAutoComplete],
+    rm: [fileAutoComplete]
 }
 
 async function toArray(asyncIterator){ 

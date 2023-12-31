@@ -1,0 +1,1 @@
+export const EXECUTION_PATH_FOLDER = '/src/cmd/';
