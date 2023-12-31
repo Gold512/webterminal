@@ -1,7 +1,6 @@
 // this module should handle command execution and autocomplete
 
 import { builtinAutocomplete, terminalBuiltin } from "./builtin.js";
-import { fs } from "./fs.js";
 import { runScript } from "./run_script.js";
 
 export async function runCommand(terminal, command) {
