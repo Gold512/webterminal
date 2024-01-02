@@ -1,10 +1,13 @@
 import { builtinAutocomplete, terminalBuiltin } from "./sys/builtin.js";
 import { getCommandAutocomplete, parseCommand, runCommand } from "./sys/cmd.js";
-import { fs } from "./sys/fs.js";
+import { fs, rootfs } from "./sys/fs.js";
 
 export class Terminal {
     constructor(label, input, output, scrollContainer) {
         this.tabindex = 0;
+        /**
+         * @type {null|string}
+         */
         this.originalPart = '';
         this.lastCommand = '';
         // cache autocomplete function for performance

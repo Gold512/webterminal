@@ -8,7 +8,7 @@ export const terminalBuiltin = {
      * @type {import('../terminal.js').Terminal}
      */
     // @ts-expect-error terminal is defined externally and will always be object Terminal as expected.
-    terminal = null,
+    terminal: null,
     async cd(path) {
 		if(path === undefined) return;
         const newPath = fs.resolvePath(path, this.terminal.path);
