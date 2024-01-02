@@ -7,6 +7,10 @@
 import { createStore, get, set, entries, del } from "../../lib/idb_keyval.js";
 const fileStore = createStore('files', 'file-store');
 
+/**
+ * @typedef {string|string[]} FilePath
+ */
+
 // API Declaration
 class FS {
     constructor(currentPath = null) {
@@ -20,7 +24,7 @@ class FS {
 
     /**
      * Get file handle 
-     * @param {string} path 
+     * @param {FilePath} path 
      * @param {string[]} currentPath 
      * @returns {Promise<FileSystemFileHandle>}
      */
@@ -42,7 +46,7 @@ class FS {
 
     /**
      * Get directory handle 
-     * @param {string|string[]} path 
+     * @param {FilePath} path 
      * @param {string[]} currentPath 
      * @returns {Promise<FileSystemDirectoryHandle>}
      */
@@ -64,7 +68,7 @@ class FS {
 
     /**
      * Write text to file, creating directories and paths recursively if necessary
-     * @param {string|string[]} path 
+     * @param {FilePath} path 
      * @param {string} content text to write to file
      * @param {string[]} currentPath current file path for resolving relative paths
      */
@@ -89,7 +93,7 @@ class FS {
 
     /**
      * read file contents
-     * @param {string|string[]} path filepath
+     * @param {FilePath} path filepath
      * @param {string[]} currentPath path of current directory
      */
     async readFile(path, currentPath = ['opfs']) {
@@ -174,6 +178,8 @@ class MountContainer {
 
     async mount() {
         const dirhandle = await getHandle();
+        if(dirhandle === undefined) return; // directory not selected by user
+        
         this.#directories[dirhandle.name] = dirhandle;
         this.#permissionRequestCache.add(dirhandle.name);
     }
@@ -247,6 +253,8 @@ function resolvePath(path, currentPath = ['opfs']) {
     currentPath = structuredClone(currentPath);
     // inherit container
     const container = currentPath.shift();
+    if(container === undefined) throw new Error('Invalid current path');
+
     const newPath = path.split('/');
     if(newPath[newPath.length - 1] === '') newPath.pop();
 
@@ -304,12 +312,12 @@ async function verifyPermission(fileHandle, withWrite) {
 /**
  * 
  * @param {string} [name] name of handle
- * @param {() => void} [log] callback which recieves output of function 
- * @returns {Promise<FileSystemDirectoryHandle>}
+ * @param {(msg) => void} [log] callback which recieves output of function 
+ * @returns {Promise<FileSystemDirectoryHandle | undefined>}
  */
-async function getHandle(name = null, log = () => {}) {
+async function getHandle(name, log = (msg) => {}) {
     try {
-        const fileHandleOrUndefined = name === null ? undefined : await get(name, fileStore);    
+        const fileHandleOrUndefined = name === undefined ? undefined : await get(name, fileStore);    
         if (fileHandleOrUndefined) {
             log(`Retrieved file handle "${fileHandleOrUndefined.name}" from IndexedDB.`);
             
@@ -322,6 +330,7 @@ async function getHandle(name = null, log = () => {}) {
             return fileHandleOrUndefined;
         }
 
+        // @ts-expect-error
         const folderHandle = await showDirectoryPicker();
 
         let permission = await verifyPermission(folderHandle, true);
@@ -349,6 +358,3 @@ export const rootfs = {
     'opfs': await navigator.storage.getDirectory(),
     'mnt': new MountContainer()
 }
-
-window.rootfs = rootfs;
-window.fs = fs;

@@ -20,7 +20,7 @@ export async function runScript(terminal, path) {
 	// convert the source to a function
 	let fn;
 	try {
-		fn = (async()=>{}).constructor('include', code);
+		fn = (async()=>{}).constructor('include', "'use strict';" + code);
 	} catch (err) { return terminal.log(err.message); }
 
 	// execute the function

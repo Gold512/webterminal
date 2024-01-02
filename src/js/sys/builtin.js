@@ -66,7 +66,7 @@ export const terminalBuiltin = {
 	 */
 	async pkg(subcommand, script) {
 		if(!pkgManager.hasOwnProperty(subcommand)) throw new Error(`package manager does not have subcommand '${subcommand}'\nValid subcommands: ${extractCommands(pkgManager)}`);
-        pkgManager[subcommand](script);
+        pkgManager[subcommand].bind(this)(script);
 	},
     async help() {
         // show list of commands 
@@ -105,6 +105,7 @@ const pkgManager = {
     async remove(script) {
         if(script === undefined || !script.match(/^[A-Za-z0-9_+-\.]+$/)) return this.terminal.log('Invalid script name');
         fs.deleteFile(`${EXECUTION_PATH_FOLDER}${script}.js`);
+        this.terminal.log(`removed package '${script}' at ${EXECUTION_PATH_FOLDER}${script}.js`);
     }
 }
 
