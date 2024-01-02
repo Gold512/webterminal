@@ -33,7 +33,7 @@ export class Terminal {
         });
         const oldPath = this.path;
         this.currentInput = v => {
-            this.log(prompt + v);
+            this.log(prompt + ' ' + v);
             this.label.innerText = fs.stringifyPath(oldPath) + ' >';
 
             resolve(v);
