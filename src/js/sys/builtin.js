@@ -106,7 +106,7 @@ export const terminalBuiltin = {
     }
 }
 
-const pkgManager = {
+export const pkgManager = {
     async add(script) {
         if(script === undefined || !script.match(/^[A-Za-z0-9_+-\.]+$/)) return this.terminal.log('Invalid script name');
 		const path = `/src/js/cmd/${script}.js`;
@@ -122,6 +122,17 @@ const pkgManager = {
     async remove(script) {
         if(script === undefined || !script.match(/^[A-Za-z0-9_+-\.]+$/)) return this.terminal.log('Invalid script name');
         fs.deleteFile(`${EXECUTION_PATH_FOLDER}${script}.js`);
+    },
+    async exe(script) {
+        if(script === undefined || !script.match(/^[A-Za-z0-9_+-\.]+$/)) return this.terminal.log('Invalid script name');
+		const path = `/src/js/cmd/${script}.js`;
+		this.terminal.log('GET ' + location.origin + path);
+        
+        const response = await fetch(path);
+        if(response.status === 404) return this.terminal.log('file not found')
+        const text = await response.text();
+        this.terminal.log('executing downloaded file')
+        runCode(this.terminal, text);
     }
 }
 
