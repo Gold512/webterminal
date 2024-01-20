@@ -17,9 +17,22 @@ class FS {
         this.currentPath = currentPath;
     }
 
+    bind(terminal) {
+        Object.defineProperty(this, 'currentPath', {
+            get() {
+                return terminal.path;
+            }
+        })
+    }
+
     async getCurrentDirectory() {
         if(!this.currentPath) throw new Error('No current directory');
         return await this.getDirectory(this.currentPath);
+    }
+
+    async move(src, dest) {
+        let currentPath = this.currentPath || ['opfs'];
+
     }
 
     /**
@@ -158,7 +171,7 @@ class FS {
         await rootfs.mnt.mount();
     }
 
-    resolvePath = resolvePath
+    resolvePath = resolvePath.bind(this);
 }
 
 class MountContainer {

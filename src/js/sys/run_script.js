@@ -1,6 +1,6 @@
 import { FSConstructor, fs } from "./fs.js";
 
-export async function runScript(terminal, path) {
+export async function runScript(terminal, path, argv) {
 
 	// get the source
 	let code;
@@ -8,11 +8,11 @@ export async function runScript(terminal, path) {
 		code = await fs.readFile(path, terminal.path);
 	} catch (err) { return terminal.log(`file '${fs.stringifyPath(path)}' does not exist`);}
 	
-	runCode(terminal, code)
+	runCode(terminal, code, argv)
 }
 
 
-export async function runCode(terminal, code) {
+export async function runCode(terminal, code, argv) {
     // execution path is the path that the script is in
     const executionPath = terminal.path;
     function include(pkg) {
@@ -26,12 +26,12 @@ export async function runCode(terminal, code) {
 	// convert the source to a function
 	let fn;
 	try {
-		fn = (async()=>{}).constructor('include', "'use strict';" + code);
+		fn = (async() => {}).constructor('include', 'argv', "'use strict';" + code)
 	} catch (err) { return terminal.log(err.message); }
 
 	// execute the function
 	try{
-		return await fn(include);
+		return await fn(include, argv);
 	} catch(e) {
 		terminal.log(e.message);
 		console.error(e);

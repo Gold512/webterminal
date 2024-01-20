@@ -3,7 +3,8 @@ const console = include('console');
 
 // install some basic scripts
 const pkgList = [
-    'tree'
+    'tree', 
+    'dd'
 ]
 
 const EXECUTION_PATH_FOLDER = '/src/cmd/';

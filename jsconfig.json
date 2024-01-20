@@ -1,0 +1,8 @@
+// this is only used for type checking code in src/js/cmd/*
+// otherwise the project uses jsdoc instead
+
+{
+	"compilerOptions": {
+		"lib": ["DOM","ES2020"]
+	}
+}

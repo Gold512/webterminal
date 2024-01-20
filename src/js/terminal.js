@@ -77,8 +77,18 @@ export class Terminal {
         this.scrollContainer.scrollTop = this.scrollContainer.scrollHeight - this.scrollContainer.offsetHeight;
     }
 
+    error(msg){
+        this.log('Error: ' + msg);
+    }
+
     clear() {
         this.output.textContent = '';
+    }
+
+    execute(input) {
+        this.log(fs.stringifyPath(this.path) + ' > ' + input);
+
+        runCommand(this, input);
     }
 
     async #keydown(ev) {
@@ -93,9 +103,7 @@ export class Terminal {
             }
     
             this.lastCommand = input.value;
-            this.log(fs.stringifyPath(this.path) + ' > ' + input.value);
-
-            runCommand(this, input.value);
+            this.execute(input.value);
 
             input.value = '';
             return;

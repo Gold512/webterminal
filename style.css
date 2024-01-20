@@ -31,7 +31,7 @@ pre {
 
 .input-box input {
     color: white;
-    background: #000;
+    background: transparent;
     border: none; 
     outline: none;
     flex-grow: 1;
@@ -57,4 +57,10 @@ pre {
 
 #output {
     margin-bottom: 0;
+}
+
+#output.wrap {
+    white-space: pre-wrap;
+    overflow-x: auto;
+    word-wrap: break-word;
 }

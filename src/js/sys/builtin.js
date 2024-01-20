@@ -1,6 +1,7 @@
 import { directoryAutoComplete, enumAutoCompleteFactory, fileAutoComplete } from "./autocomplete.js";
 import { EXECUTION_PATH_FOLDER } from "./const.js";
 import { fs, rootfs } from "./fs.js"
+import { pkgManager } from "./pkg.js";
 import { runCode, runScript } from "./run_script.js";
 
 export const terminalBuiltin = {
@@ -16,9 +17,11 @@ export const terminalBuiltin = {
 		this.terminal.path = newPath;
         this.terminal.label.innerText = fs.stringifyPath(newPath) + ' >';
     },
+
     echo(...msg) {
         this.terminal.log(msg.join(' '));
     },
+
     async mount(subcommand, ...args) {
         if(subcommand) {
             switch(subcommand) {
@@ -32,13 +35,16 @@ export const terminalBuiltin = {
         await fs.mountDirectory();
 		this.terminal.log('directory mounted successfully');
     },
+
     async dir() {
         const dir = this.terminal.currentDir;        
         const keys = await toArray(dir.keys());
         if(keys.length === 0) return this.terminal.log('[empty directory]\n');
         this.terminal.log(keys.join('\n') + '\n');
     },
+
 	async cat(path) {
+        if(path === undefined) throw new Error('Missing argument path\nUsage: cat <path>');
 		const fileHandle = await fs.getFile(path, this.terminal.path);
 		const file = await fileHandle.getFile();
         
@@ -47,11 +53,14 @@ export const terminalBuiltin = {
         const text = await file.text();
 		this.terminal.log(text + '\n');
 	},
+
 	async storage() {
 		const space = await navigator.storage.estimate();
 		this.terminal.log(`Storage: ${formatBytes(space.usage)} / ${formatBytes(space.quota)}\n`)
 	},
+
 	async df() { await this.storage() },
+
 	async js(path) {
         // js repl
         if(path === undefined) {
@@ -80,9 +89,9 @@ export const terminalBuiltin = {
 	 * @param {string} script 
 	 * @returns 
 	 */
-	async pkg(subcommand, script) {
+	async pkg(subcommand, ...scripts) {
 		if(!pkgManager.hasOwnProperty(subcommand)) throw new Error(`package manager does not have subcommand '${subcommand}'\nValid subcommands: ${extractCommands(pkgManager)}`);
-        pkgManager[subcommand].bind(this)(script);
+        pkgManager[subcommand].bind(this)(...scripts);
 	},
     async help() {
         // show list of commands 
@@ -103,36 +112,6 @@ export const terminalBuiltin = {
         if(path === null) throw new Error('expected 1 argument, got 0')
         await fs.deleteFile(path, this.terminal.path);
         this.terminal.log('successfully deleted ' + fs.stringifyPath(fs.resolvePath(path, this.terminal.path)))
-    }
-}
-
-export const pkgManager = {
-    async add(script) {
-        if(script === undefined || !script.match(/^[A-Za-z0-9_+-\.]+$/)) return this.terminal.log('Invalid script name');
-		const path = `/src/js/cmd/${script}.js`;
-		this.terminal.log('GET ' + location.origin + path);
-        
-        const response = await fetch(path);
-        if(response.status === 404) return this.terminal.log('file not found')
-        const text = await response.text();
-		this.terminal.log('Downloaded ' + script + '.js successfully');
-		fs.writeFile(`${EXECUTION_PATH_FOLDER}${script}.js`, text);
-		this.terminal.log(`Written to ${EXECUTION_PATH_FOLDER}${script}.js`);
-    },
-    async remove(script) {
-        if(script === undefined || !script.match(/^[A-Za-z0-9_+-\.]+$/)) return this.terminal.log('Invalid script name');
-        fs.deleteFile(`${EXECUTION_PATH_FOLDER}${script}.js`);
-    },
-    async exe(script) {
-        if(script === undefined || !script.match(/^[A-Za-z0-9_+-\.]+$/)) return this.terminal.log('Invalid script name');
-		const path = `/src/js/cmd/${script}.js`;
-		this.terminal.log('GET ' + location.origin + path);
-        
-        const response = await fetch(path);
-        if(response.status === 404) return this.terminal.log('file not found')
-        const text = await response.text();
-        this.terminal.log('executing downloaded file')
-        runCode(this.terminal, text);
     }
 }
 

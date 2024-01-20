@@ -22,7 +22,7 @@ export async function runCommand(terminal, command) {
     
     // execute script from /src/cmd/*.js
     try {
-        await runScript(terminal, `${EXECUTION_PATH_FOLDER}${cmdName}.js`);
+        await runScript(terminal, `${EXECUTION_PATH_FOLDER}${cmdName}.js`, parsed);
         return;
     } catch(e) {}
 
