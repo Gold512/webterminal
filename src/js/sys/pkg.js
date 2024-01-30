@@ -13,7 +13,7 @@ export const pkgManager = {
 				const path = `/src/js/cmd/${script}.js`;
 				this.terminal.log('GET ' + location.origin + path);
 				
-				const response = await fetch(path);
+				const response = await pkgFetch(script);
 				if(response.status === 404) throw new Error(`'${script}' not found`)
 
 				const text = await response.text();
@@ -38,7 +38,7 @@ export const pkgManager = {
 		const path = `/src/js/cmd/${script}.js`;
 		this.terminal.log('GET ' + location.origin + path);
         
-        const response = await fetch(path);
+        const response = await pkgFetch(script);
         if(response.status === 404) return this.terminal.log('file not found')
         const text = await response.text();
         this.terminal.log('executing downloaded file')
@@ -80,4 +80,33 @@ function parsePackage(pkg) {
 	}
 
 	return {tags, body: pkg.slice(headerEnd + CLOSE_TAG.length).trim()};
+}
+
+
+async function getgit (owner, repo, path) {
+	let data = await fetch (
+		`https://api.github.com/repos/${owner}/${repo}/contents/${path}`
+	)
+	.then (d => d.json ())
+	.then (d =>
+		   fetch (
+		`https://api.github.com/repos/${owner}/${repo}/git/blobs/${d.sha}`
+	)
+		  )
+	.then (d => d.json ())
+	.then (d => atob (d.content));
+
+	return new Response(data);
+}
+
+function pkgFetch(script) {
+	const path = `/src/js/cmd/${script}.js`;
+
+	if(location.href.includes('github.io')) {
+		const owner = location.href.match(/([a-zA-Z0-9]+)\.github\.io/)[1];
+		const repo = new URL(location.href).pathname.replaceAll('/','')
+		return getgit(owner, repo, path);
+	}
+
+	return fetch(path);
 }
