@@ -1,4 +1,5 @@
 import { FSConstructor, fs } from "./fs.js";
+import { fetchScript } from "./pkg.js";
 
 export async function runScript(terminal, path, argv) {
 
@@ -19,6 +20,7 @@ export async function runCode(terminal, code, argv) {
         switch(pkg) {
             case 'fs': return new FSConstructor(executionPath);
             case 'console': return new Console(terminal);
+			case 'sys': return new Sys;
             default: throw new Error('Unknown package ' + pkg);
         }
     }
@@ -64,4 +66,8 @@ class Console {
 	error = ((msg) => {
 		this.#terminal.log('Error: ' + msg);
 	}).bind(this)
+}
+
+class Sys {
+	fetchScript = fetchScript
 }

@@ -1,8 +1,9 @@
-type Packages = 'fs' | 'console';
+type Packages = 'fs' | 'console' | 'sys';
 
 type PackageClasses = {
 	fs: WebTerminal.FS,
-	console: WebTerminal.Console
+	console: WebTerminal.Console,
+	sys: WebTerminal.Sys
 }
 
 type FilePath = string | string[];
@@ -28,6 +29,9 @@ declare namespace WebTerminal {
 		error(msg: string)
 	}
 
+	class Sys {
+		fetchScript(script: string): Promise<Response>
+	}
 }
 
 declare function include<TPackage extends Packages>(name: TPackage): PackageClasses[TPackage];

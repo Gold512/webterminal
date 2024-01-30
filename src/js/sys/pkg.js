@@ -14,7 +14,7 @@ export const pkgManager = {
 				const path = `/src/js/cmd/${script}.js`;
 				this.terminal.log("GET " + location.origin + path);
 
-				const response = await pkgFetch(script);
+				const response = await fetchScript(script);
 				if (response.status === 404) throw new Error(`'${script}' not found`);
 
 				const text = await response.text();
@@ -47,7 +47,7 @@ export const pkgManager = {
 		const path = `/src/js/cmd/${script}.js`;
 		this.terminal.log("GET " + location.origin + path);
 
-		const response = await pkgFetch(script);
+		const response = await fetchScript(script);
 		if (response.status === 404) return this.terminal.log("file not found");
 		const text = await response.text();
 		this.terminal.log("executing downloaded file");
@@ -105,7 +105,7 @@ async function getgit(owner, repo, path) {
 	return new Response(data);
 }
 
-function pkgFetch(script) {
+export function fetchScript(script) {
 	const path = `/src/js/cmd/${script}.js`;
 
 	if (location.href.includes("github.io")) {
