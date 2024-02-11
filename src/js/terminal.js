@@ -88,7 +88,7 @@ export class Terminal {
     execute(input) {
         this.log(fs.stringifyPath(this.path) + ' > ' + input);
 
-        runCommand(this, input);
+        return runCommand(this, input);
     }
 
     async #keydown(ev) {
