@@ -10,7 +10,6 @@ for await (let [name, subdir] of dir.entries()) {
 	if(subdir.kind !== 'directory') continue;
 
 	const zip = jszip();
-	
 	for await (let [n, f] of subdir.entries()) {
 		zip.file(n, await f.getFile())
 	}

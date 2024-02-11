@@ -1,4 +1,5 @@
 const { log, prompt } = include('console');
+const JSZip = include('lib:jszip')
 
 function askForFile(ext) {
     if(ext && typeof Object.prototype.toString.call(ext) == '[object Array]') ext = ext.join(',');

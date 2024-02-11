@@ -39,3 +39,11 @@ declare namespace WebTerminal {
 
 declare function include<TPackage extends Packages | `lib:${string}`>(name: TPackage): TPackage extends Packages ? PackageClasses[TPackage] : Promise<any>;
 declare const argv: Record<string | number, string>
+
+// proper typescript annotations for fileSystemdirectory handle 
+declare interface FileSystemDirectoryHandle {
+	[Symbol.asyncIterator](): AsyncIterableIterator<[string, FileSystemHandle]>;
+	entries(): AsyncIterableIterator<[string, FileSystemHandle]>;
+	keys(): AsyncIterableIterator<string>;
+	values(): AsyncIterableIterator<FileSystemHandle>;
+}
