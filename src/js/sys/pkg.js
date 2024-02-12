@@ -1,10 +1,6 @@
-import { EXECUTION_PATH_FOLDER } from "./const.js";
+import { EXECUTION_PATH_FOLDER, libPaths } from "./const.js";
 import { fs } from "./fs.js";
 import { runCode } from "./run_script.js";
-
-const libPaths = {
-	jszip: 'github:Gold512/webterminal/src/js/cmd/lib/jszip.min.js'
-}
 
 export const pkgManager = {
 	async add(...scripts) {
