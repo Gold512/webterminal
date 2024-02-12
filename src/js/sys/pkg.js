@@ -2,6 +2,10 @@ import { EXECUTION_PATH_FOLDER } from "./const.js";
 import { fs } from "./fs.js";
 import { runCode } from "./run_script.js";
 
+const libPaths = {
+	jszip: 'github:Gold512/webterminal/src/js/cmd/lib/jszip.min.js'
+}
+
 export const pkgManager = {
 	async add(...scripts) {
 		const installed = [];
@@ -55,9 +59,24 @@ export const pkgManager = {
 	},
 
 	async addlib(name, url) {
-		const text = await fetchScript(url).then(v=>v.text());
-		await fs.writeFile(`/src/lib/${name}.js`, text);
-	}
+		const ghPrefix = "github:";
+		if(url in libPaths) url = libPaths[url];
+		
+		try {
+			let text;
+			if (url.slice(0, ghPrefix.length) === ghPrefix) {
+				const p = url.slice(ghPrefix.length).split('/');
+				text = await getgit(p[0], p[1], p.slice(2).join('/')).then((v) => v.text());
+			} else {
+				text = await fetchScript(url).then((v) => v.text());
+			}
+			
+			await fs.writeFile(`/src/lib/${name}.js`, text);
+			this.terminal.log('successfully added library ' + name);
+		} catch(e) {
+			console.error(e);
+		}
+	},
 };
 
 const OPEN_TAG = "// ==meta==";
@@ -111,13 +130,16 @@ async function getgit(owner, repo, path) {
 }
 
 function isValidURL(urlString) {
-	var urlPattern = new RegExp('^(https?:\\/\\/)?'+ // validate protocol
-  '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|'+ // validate domain name
-  '((\\d{1,3}\\.){3}\\d{1,3}))'+ // validate OR ip (v4) address
-  '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*'+ // validate port and path
-  '(\\?[;&a-z\\d%_.~+=-]*)?'+ // validate query string
-  '(\\#[-a-z\\d_]*)?$','i'); // validate fragment locator
-return !!urlPattern.test(urlString);
+	var urlPattern = new RegExp(
+		"^(https?:\\/\\/)?" + // validate protocol
+			"((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|" + // validate domain name
+			"((\\d{1,3}\\.){3}\\d{1,3}))" + // validate OR ip (v4) address
+			"(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*" + // validate port and path
+			"(\\?[;&a-z\\d%_.~+=-]*)?" + // validate query string
+			"(\\#[-a-z\\d_]*)?$",
+		"i"
+	); // validate fragment locator
+	return !!urlPattern.test(urlString);
 }
 
 export function fetchScript(script) {
@@ -129,7 +151,7 @@ export function fetchScript(script) {
 		return getgit(owner, repo, path);
 	}
 
-	if(isValidURL(script)) fetch(script);
+	if (isValidURL(script)) fetch(script);
 
 	return fetch(path);
 }
