@@ -60,8 +60,7 @@ export const pkgManager = {
 
 	async addlib(name, url) {
 		const ghPrefix = "github:";
-		if(url in libPaths) url = libPaths[url];
-		
+		if(libPaths.hasOwnProperty(name) && url === undefined) url = libPaths[name];
 		try {
 			let text;
 			if (url.slice(0, ghPrefix.length) === ghPrefix) {
